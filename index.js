@@ -56,7 +56,7 @@ async function prepareSingleNodeModulesDir() {
 const definedPackagesCache = []; // Cache the defined packages. Every test uses the same package names to make comparison easier.
 function speedTest(definedPackages = definedPackagesCache) {
   if (definedPackages.length === 0) {
-    const speedTestCount = MAX_NUMBER_OF_DIRS; // number of require calls to make
+    const speedTestCount = 100; // number of require calls to make
 
     definedPackage = new Array(speedTestCount).fill(0).map(() => {
       const randomPackage =
