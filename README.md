@@ -2,17 +2,28 @@
 
 To reproduce run the following commands:
 
-1. `yarn`
-2. `node index.js`
+1. Run `yarn` to install dependencies
+2. Run `yarn test` to run both tests and produce a comparison table
 
-## Test 1 - Multi NODE_PATH, 1 node_modules directory per package
+## Why did we do this test?
 
-This is a test to see how much overhead it will add to node's package resolution if packages were all over the place. Each package has it's own node_modules directory and all directories are added to NODE_PATH.
+When building [sandboxes](https://en.wikipedia.org/wiki/Sandbox_(software_development)) for NodeJS tools, we explored strategies to cache and share third-party dependencies across all of our builds. Think of building this system for an organization where multiple engineers work together, and they might have different versions of the dependency tree. When an engineer runs a build, we want them to be able to pull a package from our cache if it exists.
+
+One viable caching strategy could be populating a cache full of individual packages at different versions. There could be a couple of different ways to access these packages from our cache. We attempt to test the following methods of module resolution in this program:
+
+1. We could teach NodeJS the location of the packages in our cache by appending each package to `NODE_PATH` (e.g., `NODE_PATH=/cache/package-a:/cache/package-b...`).
+2. Alternatively, we could construct a single `node_modules` directory inside our sandbox that symlinks directories to each package in our cache. This would follow the rules of Node's default module resolution where top-level directories under `node_modules` are the name (or scope) of a package.
+
+We found that approach 2 (not overloading `NODE_PATH`) was much more scalable in terms of performance than 1 (listing individual dirs in `NODE_PATH`). The difference is very noticeable, and it seems like the further the package is listed in NODE_PATH, the slower it is to load. Node checks the list for each resolution, making it an O(n) operation, whereas the default resolution is constant.
+
+## Test 1 - Multiple directories in NODE_PATH, 1 node_modules directory per package
+
+This is a test to see how much overhead it will add to node's package resolution if packages were separately stored in a cache and then listed in `NODE_PATH`. Each package has it's own node_modules directory and all directories are added to `NODE_PATH`.
 
 In this case NODE_PATH is this (see full path in output.txt):
 
 ```
-NODE_PATH=/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-H93bat/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-E075kt/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-9XFeJN/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-qtQa0O/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-VNYkLR/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-YAGVQF/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-nMF9hr/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-Z8NjZJ/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-gElJIP/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-Y6MD8b/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-1K82Jd/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-QEeXLO/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-KSpN3p/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-hrACoL/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-zIIjCs/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-f7vQrJ/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-rYM4Ye/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-NCeO36/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-MwHMSE/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-APhYXP/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-gs2WHS/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-yvgwXx/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-mEdhLS/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-DH03fG/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-goaFXC/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-MDbzXr/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-iuc2z0/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-DvkT0R/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-nZovy3/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-5BoKWw/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-vQpkM2/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-bwNt90/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-StIejl/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/...
+NODE_PATH=/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-H93bat/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-E075kt/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-9XFeJN/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-qtQa0O/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-VNYkLR/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-YAGVQF/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-nMF9hr/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-Z8NjZJ/...
 ```
 
 ## Test 2 - Single NODE_PATH, 1 node_modules directory
@@ -28,105 +39,130 @@ NODE_PATH=/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules
 
 Results are pretty obvious, when packages are placed in different directories the resolution takes much longer. And the resolution time is proportional to where to package appears in the giant NODE_PATH variable paths list.
 
-| Package      | Time multi NODE_PATH (ms) | Time single NODE_PATH (ms) |
-| ------------ | ------------------------- | -------------------------- |
-| package-1858 | 61                        | 1                          |
-| package-2396 | 66                        | 0                          |
-| package-6184 | 169                       | 1                          |
-| package-9891 | 288                       | 0                          |
-| package-1528 | 36                        | 1                          |
-| package-2050 | 48                        | 0                          |
-| package-8640 | 202                       | 0                          |
-| package-698  | 22                        | 0                          |
-| package-5966 | 183                       | 1                          |
-| package-7618 | 220                       | 0                          |
-| package-8965 | 218                       | 0                          |
-| package-2190 | 55                        | 0                          |
-| package-7272 | 180                       | 0                          |
-| package-4706 | 122                       | 0                          |
-| package-7964 | 198                       | 0                          |
-| package-5702 | 159                       | 1                          |
-| package-8431 | 235                       | 0                          |
-| package-9511 | 235                       | 0                          |
-| package-4537 | 112                       | 0                          |
-| package-5542 | 137                       | 0                          |
-| package-6836 | 168                       | 0                          |
-| package-5375 | 144                       | 0                          |
-| package-5340 | 135                       | 1                          |
-| package-5491 | 148                       | 0                          |
-| package-5193 | 127                       | 0                          |
-| package-9219 | 224                       | 0                          |
-| package-4089 | 101                       | 0                          |
-| package-942  | 24                        | 0                          |
-| package-5805 | 152                       | 0                          |
-| package-2255 | 60                        | 1                          |
-| package-3012 | 75                        | 0                          |
-| package-9895 | 241                       | 0                          |
-| package-1158 | 29                        | 0                          |
-| package-5523 | 136                       | 0                          |
-| package-6778 | 164                       | 0                          |
-| package-2458 | 61                        | 0                          |
-| package-8748 | 217                       | 1                          |
-| package-8920 | 220                       | 0                          |
-| package-8457 | 210                       | 0                          |
-| package-4221 | 105                       | 0                          |
-| package-276  | 7                         | 0                          |
-| package-90   | 3                         | 0                          |
-| package-1125 | 31                        | 1                          |
-| package-2651 | 68                        | 0                          |
-| package-6455 | 166                       | 0                          |
-| package-6894 | 178                       | 0                          |
-| package-4945 | 124                       | 0                          |
-| package-4105 | 103                       | 0                          |
-| package-1086 | 28                        | 1                          |
-| package-7276 | 183                       | 0                          |
-| package-6035 | 190                       | 0                          |
-| package-1387 | 43                        | 0                          |
-| package-2047 | 54                        | 0                          |
-| package-6602 | 160                       | 0                          |
-| package-482  | 12                        | 1                          |
-| package-9100 | 222                       | 0                          |
-| package-6812 | 164                       | 0                          |
-| package-636  | 17                        | 0                          |
-| package-4107 | 102                       | 0                          |
-| package-2280 | 56                        | 1                          |
-| package-5586 | 135                       | 0                          |
-| package-4226 | 105                       | 0                          |
-| package-2477 | 61                        | 0                          |
-| package-8291 | 203                       | 0                          |
-| package-7325 | 179                       | 0                          |
-| package-6863 | 168                       | 1                          |
-| package-1577 | 41                        | 0                          |
-| package-7155 | 175                       | 0                          |
-| package-8805 | 216                       | 0                          |
-| package-882  | 22                        | 0                          |
-| package-4441 | 110                       | 1                          |
-| package-4758 | 118                       | 0                          |
-| package-6056 | 151                       | 0                          |
-| package-9075 | 222                       | 0                          |
-| package-6007 | 148                       | 1                          |
-| package-1996 | 52                        | 0                          |
-| package-1077 | 27                        | 0                          |
-| package-667  | 17                        | 0                          |
-| package-2151 | 54                        | 0                          |
-| package-9149 | 225                       | 1                          |
-| package-6002 | 150                       | 0                          |
-| package-5757 | 142                       | 0                          |
-| package-2156 | 55                        | 0                          |
-| package-2828 | 71                        | 1                          |
-| package-5320 | 134                       | 0                          |
-| package-604  | 15                        | 0                          |
-| package-3165 | 77                        | 0                          |
-| package-6451 | 160                       | 1                          |
-| package-253  | 7                         | 1                          |
-| package-4083 | 101                       | 0                          |
-| package-1250 | 31                        | 0                          |
-| package-8252 | 206                       | 0                          |
-| package-4668 | 120                       | 0                          |
-| package-1806 | 46                        | 1                          |
-| package-1913 | 49                        | 0                          |
-| package-556  | 17                        | 0                          |
-| package-960  | 29                        | 1                          |
-| package-7147 | 202                       | 1                          |
-| package-7780 | 221                       | 0                          |
-| package-8915 | 225                       | 1                          |
+| Package|Time multiple dirs in NODE_PATH (ms)|Time single NODE_PATH (ms) |
+| ---|---|--- |
+| package-161 | 3 | 0 |
+| package-182 | 3 | 0 |
+| package-185 | 4 | 0 |
+| package-263 | 4 | 0 |
+| package-379 | 5 | 0 |
+| package-389 | 5 | 1 |
+| package-503 | 6 | 0 |
+| package-554 | 7 | 0 |
+| package-627 | 10 | 0 |
+| package-683 | 9 | 0 |
+| package-697 | 10 | 0 |
+| package-708 | 9 | 0 |
+| package-788 | 11 | 0 |
+| package-810 | 11 | 1 |
+| package-845 | 11 | 0 |
+| package-887 | 12 | 0 |
+| package-958 | 12 | 0 |
+| package-1042 | 15 | 0 |
+| package-1122 | 16 | 0 |
+| package-1163 | 17 | 0 |
+| package-1228 | 18 | 0 |
+| package-1321 | 19 | 1 |
+| package-1405 | 19 | 0 |
+| package-1529 | 21 | 0 |
+| package-1551 | 22 | 0 |
+| package-1692 | 22 | 0 |
+| package-1804 | 25 | 0 |
+| package-2126 | 36 | 0 |
+| package-2372 | 34 | 0 |
+| package-2394 | 34 | 1 |
+| package-2412 | 33 | 0 |
+| package-2417 | 31 | 0 |
+| package-2585 | 38 | 0 |
+| package-2610 | 35 | 0 |
+| package-2691 | 36 | 0 |
+| package-2803 | 40 | 0 |
+| package-2856 | 40 | 0 |
+| package-3135 | 41 | 1 |
+| package-3239 | 44 | 0 |
+| package-3561 | 47 | 0 |
+| package-3662 | 55 | 0 |
+| package-3671 | 47 | 0 |
+| package-3750 | 49 | 0 |
+| package-3826 | 49 | 0 |
+| package-4085 | 94 | 0 |
+| package-4126 | 58 | 0 |
+| package-4298 | 63 | 1 |
+| package-4442 | 60 | 0 |
+| package-4446 | 59 | 0 |
+| package-4527 | 58 | 0 |
+| package-4627 | 61 | 0 |
+| package-4644 | 60 | 0 |
+| package-4740 | 63 | 0 |
+| package-4821 | 71 | 0 |
+| package-5331 | 71 | 0 |
+| package-5537 | 101 | 1 |
+| package-5587 | 74 | 0 |
+| package-5750 | 78 | 0 |
+| package-5850 | 82 | 0 |
+| package-6012 | 105 | 0 |
+| package-6018 | 79 | 0 |
+| package-6062 | 84 | 0 |
+| package-6259 | 84 | 0 |
+| package-6295 | 83 | 0 |
+| package-6584 | 88 | 1 |
+| package-6835 | 91 | 0 |
+| package-6902 | 96 | 0 |
+| package-6940 | 93 | 0 |
+| package-6954 | 94 | 0 |
+| package-6989 | 92 | 0 |
+| package-7026 | 92 | 0 |
+| package-7080 | 99 | 0 |
+| package-7123 | 94 | 0 |
+| package-7251 | 102 | 0 |
+| package-7254 | 111 | 1 |
+| package-7407 | 97 | 0 |
+| package-7664 | 104 | 0 |
+| package-7783 | 106 | 0 |
+| package-7814 | 103 | 0 |
+| package-7971 | 105 | 0 |
+| package-8038 | 110 | 0 |
+| package-8226 | 108 | 0 |
+| package-8298 | 111 | 1 |
+| package-8357 | 112 | 0 |
+| package-8573 | 117 | 0 |
+| package-8854 | 115 | 0 |
+| package-8953 | 120 | 0 |
+| package-8961 | 129 | 0 |
+| package-9019 | 121 | 0 |
+| package-9091 | 118 | 0 |
+| package-9122 | 118 | 0 |
+| package-9267 | 148 | 1 |
+| package-9511 | 146 | 0 |
+| package-9567 | 129 | 0 |
+| package-9713 | 147 | 0 |
+| package-9736 | 126 | 0 |
+| package-9737 | 142 | 0 |
+| package-9873 | 131 | 0 |
+| package-9885 | 163 | 0 |
+
+The resolution time (y-axis ms) of multiple node_modules directories as the directories are listed in NODE_PATH (x-axis packages in NODE_PATH order).
+
+```
+163.00 ┼                                                                                                 ╭
+155.00 ┤                                                                                          ╭╮     │
+147.00 ┤                                                                                          │╰╮╭╮╭╮│
+139.00 ┤                                                                                          │ ││││││
+131.00 ┤                                                                                      ╭╮  │ ╰╯╰╯╰╯
+123.00 ┤                                                                                   ╭╮╭╯╰──╯
+115.00 ┤                                                                         ╭╮    ╭───╯╰╯
+107.00 ┤                                                      ╭╮  ╭╮            ╭╯│╭───╯
+99.00  ┤                                           ╭╮         ││  ││     ╭──────╯ ╰╯
+91.00  ┤                                           ││         ││  ││╭─╮╭─╯
+83.00  ┤                                           ││         ││╭─╯╰╯ ╰╯
+75.00  ┤                                           ││       ╭─╯╰╯
+67.00  ┤                                           ││╭─╮ ╭──╯
+59.00  ┤                                       ╭╮  │╰╯ ╰─╯
+51.00  ┤                                     ╭─╯╰──╯
+43.00  ┤                          ╭╮   ╭╮╭───╯
+35.00  ┤                          │╰───╯╰╯
+27.00  ┤                      ╭───╯
+19.00  ┤              ╭───────╯
+11.00  ┤ ╭────────────╯
+3.00   ┼─╯
+```

@@ -5,11 +5,13 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node index.js"
   },
   "author": "Sharmila Jesupaul <tosharmila@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "asciiplot": "^1.0.0",
+    "ora": "5.4.1",
     "rimraf": "^3.0.2"
   }
 }
