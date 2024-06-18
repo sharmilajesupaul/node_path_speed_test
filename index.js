@@ -13,12 +13,11 @@ const {
 const { plotSpeeds, makeMarkdownTable } = require("./printers");
 
 const TMP_DIR = path.join(__dirname, "tmp"); // tmp directory to create the node_modules
-const MAX_NUMBER_OF_DIRS = 10000; // max number of directories to create
+const MAX_NUMBER_OF_DIRS = 10_000; // max number of directories to create
 const FILE_CONTENTS = `module.exports = 'hello world'`; // file contents to write to the index.js file
 
 /** Prepare the directories and files for the test */
 async function prepare() {
-  const promises = [];
   const directoriesMade = [];
 
   for (let i = 0; i < MAX_NUMBER_OF_DIRS; i++) {
@@ -35,7 +34,6 @@ async function prepare() {
     directoriesMade.push(path.join(dir, "node_modules"));
   }
 
-  await Promise.all(promises);
   return directoriesMade.join(path.delimiter);
 }
 
@@ -58,18 +56,17 @@ function speedTest(definedPackages = definedPackagesCache) {
   if (definedPackages.length === 0) {
     const speedTestCount = 100; // number of require calls to make
 
-    definedPackage = new Array(speedTestCount).fill(0).map(() => {
+    // Make the packages list unique
+    let definedPackagesSet = new Set(definedPackages);
+    while (definedPackagesSet.size < speedTestCount) {
       const randomPackage =
         "package-" + getRandomArbitrary(0, MAX_NUMBER_OF_DIRS - 1);
 
-      definedPackages.push(randomPackage);
-      definedPackagesCache.push(randomPackage);
-      return randomPackage;
-    });
-  }
+      definedPackagesSet.add(randomPackage);
+    }
 
-  // Make the packages list unique
-  definedPackages = [...new Set(definedPackages)];
+    definedPackages = Array.from(definedPackagesSet);
+  }
 
   let data = [];
 

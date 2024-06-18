@@ -33,9 +33,14 @@ function makeMarkdownTable(dataTest1, dataTest2) {
 
 /** Plot the NODE_PATH speeds in an ascii barchart */
 function plotSpeeds(dataTest1) {
-  console.log(plot(dataTest1.map((item) => item.requireDurationMs), {
-    height: 20,
-  }));
+  console.log(
+    plot(
+      dataTest1.map((item) => item.requireDurationMs),
+      {
+        height: 20,
+      },
+    ),
+  );
 }
 
 module.exports = {
