@@ -26,7 +26,7 @@ In this case `NODE_PATH` is this (see full path in `output.txt`):
 NODE_PATH=/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-H93bat/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-E075kt/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-9XFeJN/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-qtQa0O/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-VNYkLR/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-YAGVQF/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-nMF9hr/node_modules:/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-Z8NjZJ/...
 ```
 
-## Test 2 - Single `NODE_PATH`, 1 `node_modules` directory
+## Test 2 - Single directory `NODE_PATH`, 1 `node_modules` directory
 
 Closer to the structure of root node_modules, we make a directory called `tmp/node_modules` and all packages to that directory.
 In this case `NODE_PATH` is this:
