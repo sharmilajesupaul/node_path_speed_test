@@ -14,7 +14,7 @@ One viable caching strategy could be populating a cache full of individual packa
 1. We could teach NodeJS the location of the packages in our cache by appending each package to `NODE_PATH` (e.g., `NODE_PATH=/cache/package-a:/cache/package-b...`).
 2. Alternatively, we could construct a single `node_modules` directory inside our sandbox that symlinks directories to each package in our cache. This would follow the rules of Node's default module resolution where top-level directories under `node_modules` are the name (or scope) of a package.
 
-We found that approach 2 (not overloading `NODE_PATH`) was much more scalable in terms of performance than 1 (listing individual dirs in `NODE_PATH`). The difference is very noticeable, and it seems like the further the package is listed in `NODE_PATH`, the slower it is to load. Node checks the list for each resolution, making it an O(n) operation, whereas the default resolution is constant.
+We found that approach 2 (a single `node_modules` dir) was much more scalable in terms of performance than 1 (multiple `node_modules` dirs). The difference is very noticeable, and it seems like the larger the package name is, the slower it is to load. Node checks every potential path each package resolution, making it an O(n) operation, whereas the default resolution is constant.
 
 ## Test 1 - Multiple directories in `NODE_PATH`, 1 `node_modules` directory per package
 
