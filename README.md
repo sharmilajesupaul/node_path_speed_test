@@ -28,7 +28,7 @@ NODE_PATH=/Users/sharmilajesupaul/code/node_path_speed_test/tmp/node_modules-H93
 
 ## Test 2 - Single directory `NODE_PATH`, 1 `node_modules` directory
 
-Closer to the structure of root node_modules, we make a directory called `tmp/node_modules` and all packages to that directory.
+Closer to the structure of root node_modules, we make a directory called `tmp/node_modules` and all packages are symlinked into that directory to create a directory structure like a standard `node_modules` directory.
 In this case `NODE_PATH` is this:
 
 ```
